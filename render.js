@@ -23,7 +23,10 @@ let drawRect = (x,y, w,h, rgba8bitValues) => {
 }
 
 let clear = () => {
-    drawRect(0, 0, width, height, [0, 0, 200, 255]);
+    const top = [100,100,200, 255];
+    const bottom = [50,50,50, 255];
+    drawRect(0, 0, width, height/2, top);
+    drawRect(0, height/2, width, height/2, bottom);
 }
 let drawFacingLine = () => {
     pmx = (player.x+.5)*mapCanvas.width/mapWidth;
@@ -168,7 +171,7 @@ function draw() {
         f.multiplyScalar(2/slices);
         for (let x = 0; x < slices; x++){
             let nextRay = new Victor(target.x-player.x, target.y-player.y);
-            slowLog(`target ${target} nextRay ${nextRay}`);
+            // slowLog(`target ${target} nextRay ${nextRay}`);
             yield nextRay;
             target.add(f);
         }
@@ -182,13 +185,15 @@ function draw() {
         let wallPoint = findCollisionPoint(map, new Victor(player.x, player.y), nextRay.next().value);
         // slowLog(`collision point is ${wallPoint}`);
         let d = getPointDistanceFromCameraPlane(wallPoint, new Victor(player.x,player.y), player.facing);
-        // slowLog(`d to plane is ${d}`);
+        slowLog(`d to plane is ${d}`);
         lastH = h;
         h = height/(2*d);
         h = round(h);
         h = h - (h % 4);
+        let bright = 1/distance(new Victor(player.x,player.y), wallPoint);
+        let color = [255*bright,0,0, 255];
         // slowLog(`h became ${h}`);
-        drawRect(drawLoc, height/2 - h/2, drawSliceSize, h, [255,0,0, 255]);
+        drawRect(drawLoc, height/2 - h/2, drawSliceSize, h, color);
         drawLoc += drawSliceSize;
         // slowLog(`h delta is ${Math.abs(lastH - h)}`);
     }
