@@ -34,8 +34,8 @@ let clear = () => {
     }
 }
 let drawFacingLine = () => {
-    pmx = (player.x+.5)*mapCanvas.width/mapWidth;
-    pmy = (player.y+.5)*mapCanvas.height/mapHeight;
+    let pmx = (player.x+.5)*mapCanvas.width/mapWidth;
+    let pmy = (player.y+.5)*mapCanvas.height/mapHeight;
     mapContext.beginPath();
     mapContext.moveTo(pmx,pmy);
     mapContext.strokeStyle = fillStyle([0,0,255, 255]);
