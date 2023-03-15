@@ -79,6 +79,7 @@ let player = {
     speed: .001,
     turnSpeed: .001,
     shouldLog: false,
+    fov: Math.PI/2,
 }
 
 let pressedKeys = {};
@@ -157,15 +158,14 @@ function draw() {
     // drawFacingLine();
 
     // *********** scan for walls
-    let fov = Math.PI/2 - .8;
     const slices = width/10;
-    let raySliceSize = fov/slices;
+    let raySliceSize = player.fov/slices;
     let drawLoc = 0;
     let drawSliceSize = width/slices;
     let lastH = 0;
     let h = 0;
     for (let x = 0; x < slices; x++) {
-        let ray = rotateBy(player.facing.clone(), -(fov/2) + (raySliceSize*x));
+        let ray = rotateBy(player.facing.clone(), -(player.fov/2) + (raySliceSize*x));
         ray.normalize();
         slowLog(`ray is ${ray}`);
         // let wallPoint = getRayCollisionPoint(new Victor(player.x, player.y), ray);
