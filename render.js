@@ -153,34 +153,44 @@ let slowLog = (msg) => {
 }
 function draw() {
     slowLog(`********** draw`);
-    // Draw the state of the world
     clear();
-    // drawFacingLine();
 
     // *********** scan for walls
     const slices = width/10;
-    let raySliceSize = player.fov/slices;
+    function* nextRay(){
+        let target = new Victor(player.x, player.y);
+        let f = player.facing.clone();
+        f.normalize();
+        target.add(f);
+        f = rotateBy(f, -Math.PI/2);
+        target.add(f);
+        f = rotateBy(f, -Math.PI);
+        f.multiplyScalar(2/slices);
+        for (let x = 0; x < slices; x++){
+            let nextRay = new Victor(target.x-player.x, target.y-player.y);
+            slowLog(`target ${target} nextRay ${nextRay}`);
+            yield nextRay;
+            target.add(f);
+        }
+    }
+    nextRay = nextRay();
     let drawLoc = 0;
     let drawSliceSize = width/slices;
     let lastH = 0;
     let h = 0;
     for (let x = 0; x < slices; x++) {
-        let ray = rotateBy(player.facing.clone(), -(player.fov/2) + (raySliceSize*x));
-        ray.normalize();
-        slowLog(`ray is ${ray}`);
-        // let wallPoint = getRayCollisionPoint(new Victor(player.x, player.y), ray);
-        let wallPoint = findCollisionPoint(map, new Victor(player.x, player.y), ray);
+        let wallPoint = findCollisionPoint(map, new Victor(player.x, player.y), nextRay.next().value);
         // slowLog(`collision point is ${wallPoint}`);
         let d = getPointDistanceFromCameraPlane(wallPoint, new Victor(player.x,player.y), player.facing);
-        slowLog(`d to plane is ${d}`);
+        // slowLog(`d to plane is ${d}`);
         lastH = h;
         h = height/(2*d);
         h = round(h);
         h = h - (h % 4);
-        slowLog(`h became ${h}`);
+        // slowLog(`h became ${h}`);
         drawRect(drawLoc, height/2 - h/2, drawSliceSize, h, [255,0,0, 255]);
         drawLoc += drawSliceSize;
-        slowLog(`h delta is ${Math.abs(lastH - h)}`);
+        // slowLog(`h delta is ${Math.abs(lastH - h)}`);
     }
 
     drawMap();

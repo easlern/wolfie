@@ -201,9 +201,20 @@ let test_getPointDistanceFromCameraPlane_pointUpperRightOfDecline_offsetCamera =
     let fv = new Victor(1,-1);
     test_compare(`1700`, Math.sqrt(9**2+9**2), getPointDistanceFromCameraPlane(p, cp,fv));
 };
+let test_rotateBy_rotatesClockwise = () => {
+    let r = new Victor(0,-1);
+    r = rotateBy(r, Math.PI/2);
+    test_compare(`2000`, new Victor(1,0), r);
+};
 let test_compare = (name, expect, get) => {
+    const fudge = .00001;
     let pass = () => {
         console.log(`Passed test ${name}`);
+    }
+    if (typeof(expect) === typeof(new Victor()) && typeof(get) === typeof(new Victor())) {
+        if (expect.x - get.x < fudge && expect.y - get.y < fudge){
+            return pass();
+        }
     }
     if (expect.toString() === get.toString()){
         return pass();
@@ -239,6 +250,7 @@ tests = [
     test_getPointDistanceFromCameraPlane_pointUpperLeftOfHorizontalPlane,
     test_getPointDistanceFromCameraPlane_pointUpperRightOfDecline,
     test_getPointDistanceFromCameraPlane_pointUpperRightOfDecline_offsetCamera,
+    test_rotateBy_rotatesClockwise,
 ];
 for(let t of tests) {
     t();
