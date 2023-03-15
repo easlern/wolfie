@@ -1,3 +1,15 @@
+let rotateBy = (vector, amount) => {
+    let x2 = vector.x * Math.cos(amount) - vector.y * Math.sin(amount);
+    let y2 = vector.x * Math.sin(amount) + vector.y * Math.cos(amount);
+    return new Victor(x2,y2).normalize();
+};
+function round(x, places=0) {
+    return Math.round(x * 10**places) / 10**places;
+}
+let getFirstDecimal = (num) => {
+    num -= Math.floor(num);
+    return Math.floor(num*10);
+}
 let getMapValue = (map, x,y) => {
     x = Math.floor(x);
     y = Math.floor(y);
@@ -49,9 +61,17 @@ let findCollisionPoint = (map, cameraPoint, cameraFacing) => {
         // testVerbose(`point ${point} ray ${ray} xd ${xd} yd ${yd} xl ${xl} yl ${yl} m ${m}`);
     }
 }
-let distanceFromPointToLine = (p, a, b) => { // p is the point, a is one end of line segment, b is other end of line segment.
-    return Math.abs((b.x-a.x)*(a.y-p.y) - (a.x-p.x)*(b.y-a.y)) / Math.sqrt((b.x-a.x)**2 + (b.y-a.y)**2);
-}
+let distanceFromPointToLine = (p, a,b) => { // p is the point, a is one end of line segment, b is other end of line segment.
+    return Math.abs((b.x-a.x)*(a.y-p.y) - (b.y-a.y)*(a.x-p.x)) / Math.sqrt((b.x-a.x)**2 + (b.y-a.y)**2);
+};
+let getPointDistanceFromCameraPlane = (point, camPoint, camFacing) => {
+    let a = camPoint.clone();
+    let r = camFacing.clone();
+    r = rotateBy(r, Math.PI/2);
+    let b = a.clone();
+    b.add(r);
+    return distanceFromPointToLine(point, a,b);
+};
 
 let test_findCollisionPoint_findsFirstEdgeStraightOn = () => {
     let map = [
@@ -121,14 +141,82 @@ let test_findCollisionPoint_findsUpperLeftDiagonalEdge = () => {
     let cp = findCollisionPoint(map, cam, new Victor(1,-1));
     test_compare('600', new Victor(2,0), cp);
 };
+let test_distanceFromPointToLine_pointOnRightOfVerticalLine = () => {
+    let p = new Victor(10,0);
+    let l1 = new Victor(0,-10);
+    let l2 = new Victor(0,10);
+    test_compare('1000', 10, distanceFromPointToLine(p, l1,l2));
+};
+let test_distanceFromPointToLine_pointOnRightOfVerticalLine_normalOutsideSegmentEnds = () => {
+    let p = new Victor(10,0);
+    let l1 = new Victor(0,10);
+    let l2 = new Victor(0,20);
+    test_compare('1100', 10, distanceFromPointToLine(p, l1,l2));
+};
+let test_distanceFromPointToLine_pointOnRightOfVerticalLine_normalOutsideSegmentEnds_offsetLine = () => {
+    let p = new Victor(10,-10);
+    let l1 = new Victor(1,-1);
+    let l2 = new Victor(1,1);
+    test_compare('1150', 9, distanceFromPointToLine(p, l1,l2));
+}
+let test_distanceFromPointToLine_pointUpperRightOfDecline_offsetLine = () => {
+    let p = new Victor(10,-10);
+    let l1 = new Victor(1,0);
+    let l2 = new Victor(2,1);
+    test_compare('1175', Math.sqrt(9**2+9**2), distanceFromPointToLine(p, l1,l2));
+}
+let test_getPointDistanceFromCameraPlane_pointRightOfVerticalPlane = () => {
+    let p = new Victor(10,0);
+    let cp = new Victor(0,0);
+    let fv = new Victor(10,0);
+    test_compare(`1200`, 10, getPointDistanceFromCameraPlane(p, cp,fv));
+};
+let test_getPointDistanceFromCameraPlane_pointUpperRightOfVerticalPlane = () => {
+    let p = new Victor(10,-10);
+    let cp = new Victor(0,0);
+    let fv = new Victor(10,0);
+    test_compare(`1300`, 10, getPointDistanceFromCameraPlane(p, cp,fv));
+};
+let test_getPointDistanceFromCameraPlane_pointUpperLeftOfVerticalPlane = () => {
+    let p = new Victor(-10,-10);
+    let cp = new Victor(0,0);
+    let fv = new Victor(-10,0);
+    test_compare(`1400`, 10, getPointDistanceFromCameraPlane(p, cp,fv));
+};
+let test_getPointDistanceFromCameraPlane_pointUpperLeftOfHorizontalPlane = () => {
+    let p = new Victor(-10,-10);
+    let cp = new Victor(0,0);
+    let fv = new Victor(0,-10);
+    test_compare(`1500`, 10, getPointDistanceFromCameraPlane(p, cp,fv));
+};
+let test_getPointDistanceFromCameraPlane_pointUpperRightOfDecline = () => {
+    let p = new Victor(10,-10);
+    let cp = new Victor(0,0);
+    let fv = new Victor(1,-1);
+    test_compare(`1600`, Math.sqrt(200), getPointDistanceFromCameraPlane(p, cp,fv));
+};
+let test_getPointDistanceFromCameraPlane_pointUpperRightOfDecline_offsetCamera = () => {
+    let p = new Victor(10,-10);
+    let cp = new Victor(1,-1);
+    let fv = new Victor(1,-1);
+    test_compare(`1700`, Math.sqrt(9**2+9**2), getPointDistanceFromCameraPlane(p, cp,fv));
+};
 let test_compare = (name, expect, get) => {
-    if (expect.toString() !== get.toString()) {
+    let pass = () => {
+        console.log(`Passed test ${name}`);
+    }
+    if (expect.toString() === get.toString()){
+        return pass();
+    }
+    else if (Number.isFinite(expect) && Number.isFinite(get)) {
+        if (round(expect, 3) === round(get, 3)){
+            return pass();
+        }
+    }
+    else {
         console.log(`Failed test ${name}`);
         console.log(`Expected ${expect}`);
         console.log(`Got ${get}`);
-    }
-    else {
-        console.log(`Passed test ${name}`);
     }
 };
 
@@ -141,6 +229,16 @@ tests = [
     test_findCollisionPoint_findsEdgeOneDown,
     test_findCollisionPoint_findsImmediateDiagonalEdge,
     test_findCollisionPoint_findsUpperLeftDiagonalEdge,
+    test_distanceFromPointToLine_pointOnRightOfVerticalLine,
+    test_distanceFromPointToLine_pointOnRightOfVerticalLine_normalOutsideSegmentEnds,
+    test_distanceFromPointToLine_pointOnRightOfVerticalLine_normalOutsideSegmentEnds_offsetLine,
+    test_distanceFromPointToLine_pointUpperRightOfDecline_offsetLine,
+    test_getPointDistanceFromCameraPlane_pointRightOfVerticalPlane,
+    test_getPointDistanceFromCameraPlane_pointUpperRightOfVerticalPlane,
+    test_getPointDistanceFromCameraPlane_pointUpperLeftOfVerticalPlane,
+    test_getPointDistanceFromCameraPlane_pointUpperLeftOfHorizontalPlane,
+    test_getPointDistanceFromCameraPlane_pointUpperRightOfDecline,
+    test_getPointDistanceFromCameraPlane_pointUpperRightOfDecline_offsetCamera,
 ];
 for(let t of tests) {
     t();

@@ -94,11 +94,6 @@ window.onkeydown = function(e) {
 let distance = (a, b) => {
     return Math.sqrt((b.x - a.x)**2 + (b.y - a.y)**2);
 }
-let rotateBy = (vector, amount) => {
-    let x2 = vector.x * Math.cos(amount) - vector.y * Math.sin(amount);
-    let y2 = vector.x * Math.sin(amount) + vector.y * Math.cos(amount);
-    return new Victor(x2,y2).normalize();
-};
 
 let frameCorrelator = Math.random();
 function update(progress) {
@@ -162,7 +157,7 @@ function draw() {
     // drawFacingLine();
 
     // *********** scan for walls
-    let fov = Math.PI/2;
+    let fov = Math.PI/2 - .8;
     const slices = width/10;
     let raySliceSize = fov/slices;
     let drawLoc = 0;
@@ -176,23 +171,7 @@ function draw() {
         // let wallPoint = getRayCollisionPoint(new Victor(player.x, player.y), ray);
         let wallPoint = findCollisionPoint(map, new Victor(player.x, player.y), ray);
         // slowLog(`collision point is ${wallPoint}`);
-        let d = 0;
-        if (x < slices/2) { // left half of screen
-            slowLog(`left half x is ${x}`);
-            d = distance(wallPoint, new Victor(player.x, player.y));
-            slowLog(`d to player is ${d} ray slice size is ${raySliceSize}`);
-            let theta = (fov/2) + (raySliceSize*x);
-            slowLog(`theta is ${theta}`);
-            d = Math.sin(theta)*d; // sin(theta) = opp/hyp ; sin(theta)*hyp = opp
-        }
-        else{ // right half of screen
-            slowLog(`right half x is ${x}`);
-            d = distance(wallPoint, new Victor(player.x, player.y));
-            slowLog(`d to player is ${d} ray slice size is ${raySliceSize}`);
-            let theta = (fov*2) - (fov/2) - (raySliceSize*x);
-            slowLog(`theta is ${theta}`);
-            d = Math.sin(theta)*d;
-        }
+        let d = getPointDistanceFromCameraPlane(wallPoint, new Victor(player.x,player.y), player.facing);
         slowLog(`d to plane is ${d}`);
         lastH = h;
         h = height/(2*d);
@@ -205,13 +184,6 @@ function draw() {
     }
 
     drawMap();
-}
-function round(x, places=0) {
-    return Math.round(x * 10**places) / 10**places;
-}
-let getFirstDecimal = (num) => {
-    num -= Math.floor(num);
-    return Math.floor(num*10);
 }
 
 function loop(timestamp) {
