@@ -26,7 +26,12 @@ let clear = () => {
     const top = [100,100,200, 255];
     const bottom = [50,50,50, 255];
     drawRect(0, 0, width, height/2, top);
-    drawRect(0, height/2, width, height/2, bottom);
+    const yStep = 5;
+    let c = 50;
+    for (let y = height/2; y < height; y += yStep) {
+        drawRect(0, y, width, yStep, [c,c,c, 255]);
+        c += 5;
+    }
 }
 let drawFacingLine = () => {
     pmx = (player.x+.5)*mapCanvas.width/mapWidth;
