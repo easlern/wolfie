@@ -11,16 +11,23 @@ let setPixel = (x,y, rgba8bitValues) => {
     let d = context.createImageData(1, 1);
     Object.assign(d.data, rgba8bitValues);
     context.putImageData(d, x,y);
-}
+};
 
 let fillStyle = (rgba8bitValues) => {
     return `rgba(${rgba8bitValues[0]}, ${rgba8bitValues[1]}, ${rgba8bitValues[2]}, ${rgba8bitValues[3]})`;
-}
+};
 
 let drawRect = (x,y, w,h, rgba8bitValues) => {
     context.fillStyle = fillStyle(rgba8bitValues);
     context.fillRect(x,y, w,h);
-}
+};
+let blitRect = (image, sx,sy, sw,sh, dx,dy, dw,dh, alpha) => {
+    const oga = context.globalAlpha;
+    context.globalAlpha = alpha;
+    slowLog(`blitting sx ${sx} sy ${sy} sw ${sw} sh ${sh} dx ${dx} dy ${dy} dw ${dw} dh ${dh} alpha ${alpha}`);
+    context.drawImage(image, sx,sy, sw,sh, dx,dy, dw,dh);
+    context.globalAlpha = oga;
+};
 
 let clear = () => {
     const top = [100,100,200, 255];
@@ -32,7 +39,7 @@ let clear = () => {
         drawRect(0, y, width, yStep, [c,c,c, 255]);
         c += 5;
     }
-}
+};
 let drawFacingLine = () => {
     let pmx = (player.x+.5)*mapCanvas.width/mapWidth;
     let pmy = (player.y+.5)*mapCanvas.height/mapHeight;
@@ -164,8 +171,9 @@ function draw() {
     clear();
 
     // *********** scan for walls
-    const slices = width/10;
-    function* nextRay(){
+    let slices = width/10;
+    slices = 10;
+    function* rayGen(){
         let target = new Victor(player.x, player.y);
         let f = player.facing.clone();
         f.normalize();
@@ -174,33 +182,51 @@ function draw() {
         target.add(f);
         f = rotateBy(f, -Math.PI);
         f.multiplyScalar(2/slices);
-        for (let x = 0; x < slices; x++){
-            let nextRay = new Victor(target.x-player.x, target.y-player.y);
-            // slowLog(`target ${target} nextRay ${nextRay}`);
-            yield nextRay;
+        for (let x = 0; x <= slices; x++){
+            let next = new Victor(target.x-player.x, target.y-player.y);
+            // slowLog(`target ${target} next ${next}`);
+            yield next;
             target.add(f);
         }
     }
-    nextRay = nextRay();
+    rayGen = rayGen();
     let drawLoc = 0;
     let drawSliceSize = width/slices;
-    let lastH = 0;
     let h = 0;
+    let nextRay = rayGen.next().value;
+    let nextWallPoint = findCollisionPoint(map, new Victor(player.x, player.y), nextRay);
     for (let x = 0; x < slices; x++) {
-        let wallPoint = findCollisionPoint(map, new Victor(player.x, player.y), nextRay.next().value);
+        const wallPoint = nextWallPoint;
+        nextRay = rayGen.next().value;
+        if (nextRay) nextWallPoint = findCollisionPoint(map, new Victor(player.x, player.y), nextRay);
         // slowLog(`collision point is ${wallPoint}`);
         let d = getPointDistanceFromCameraPlane(wallPoint, new Victor(player.x,player.y), player.facing);
-        slowLog(`d to plane is ${d}`);
-        lastH = h;
+
+        // draw black background behind texture
         h = height/(2*d);
         h = round(h);
         h = h - (h % 4);
-        let bright = 1/distance(new Victor(player.x,player.y), wallPoint);
-        let color = [255*bright,0,0, 255];
-        // slowLog(`h became ${h}`);
+        let color = [0,0,0, 255];
         drawRect(drawLoc, height/2 - h/2, drawSliceSize, h, color);
+        let bright = 1/distance(new Victor(player.x,player.y), wallPoint);
+
+        // draw textures within this slice
+        let subX = drawLoc;
+        while (subX < drawLoc + drawSliceSize) {
+            const wo = wallPoint.x % 1;
+            const sx = brick.width * wo;
+            const sy = 0;
+            let sw = brick.width * (nextWallPoint.x - wallPoint.x);
+            const sh = brick.height;
+            const dx = subX;
+            const dy = height / 2 - h / 2;
+            const txRem = brick.width - sx;
+            if (sw > txRem) sw = txRem;
+            blitRect(brick, sx,sy, sw,sh, dx,dy, drawSliceSize,h, bright);
+            subX += drawSliceSize;
+        }
+
         drawLoc += drawSliceSize;
-        // slowLog(`h delta is ${Math.abs(lastH - h)}`);
     }
 
     drawMap();

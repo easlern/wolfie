@@ -1,3 +1,7 @@
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 let rotateBy = (vector, amount) => {
     let x2 = vector.x * Math.cos(amount) - vector.y * Math.sin(amount);
     let y2 = vector.x * Math.sin(amount) + vector.y * Math.cos(amount);
