@@ -172,7 +172,7 @@ let getWallTexture = (x,y) => {
 }
 
 let slices = width/20;
-slices = 8;
+slices = 2**6;
 let sliceWidth = width/slices;
 function draw() {
     slowLog(`********** draw`);
@@ -215,13 +215,14 @@ function draw() {
         let sliceY = height/2 - sliceHeight/2;
         drawRect(x*sliceWidth, sliceY, sliceWidth, sliceHeight, color);
 
+        let tex = getWallTexture(wallPoint.x, wallPoint.y);
         // draw textures within this slice
-        let sx = brick.width * (wallPoint.x%1);
-        let sx2 = brick.width * (nextWallPoint.x%1);
-        if (sx2 < sx) sx2 += 1;
+        let sx = tex.width * (wallPoint.x%1);
+        let sx2 = tex.width * (nextWallPoint.x%1);
         let sy = 0;
-        let sw = Math.min(sliceWidth, sx2-sx);
-        let sh = brick.height;
+        let sw = sx2 - sx;
+        if (sw < 0) sw = tex.width - sx;
+        let sh = tex.height;
         let dx = sliceX;
         let dy = sliceY;
         let dw = sliceWidth;
@@ -246,5 +247,5 @@ function loop(timestamp) {
     let info = document.getElementById('info');
     info.innerHTML = `${round(progress,2)}<br/>${JSON.stringify(player)}`;
 }
-let lastRender = 0
-window.requestAnimationFrame(loop)
+let lastRender = 0;
+window.requestAnimationFrame(loop);
