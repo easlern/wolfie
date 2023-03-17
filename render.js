@@ -11,16 +11,23 @@ let setPixel = (x,y, rgba8bitValues) => {
     let d = context.createImageData(1, 1);
     Object.assign(d.data, rgba8bitValues);
     context.putImageData(d, x,y);
-}
+};
 
 let fillStyle = (rgba8bitValues) => {
     return `rgba(${rgba8bitValues[0]}, ${rgba8bitValues[1]}, ${rgba8bitValues[2]}, ${rgba8bitValues[3]})`;
-}
+};
 
 let drawRect = (x,y, w,h, rgba8bitValues) => {
     context.fillStyle = fillStyle(rgba8bitValues);
     context.fillRect(x,y, w,h);
-}
+};
+let blitRect = (image, sx,sy, sw,sh, dx,dy, dw,dh, alpha) => {
+    const oga = context.globalAlpha;
+    context.globalAlpha = alpha;
+    slowLog(`blitting sx ${sx} sy ${sy} sw ${sw} sh ${sh} dx ${dx} dy ${dy} dw ${dw} dh ${dh} alpha ${alpha}`);
+    context.drawImage(image, sx,sy, sw,sh, dx,dy, dw,dh);
+    context.globalAlpha = oga;
+};
 
 let clear = () => {
     const top = [100,100,200, 255];
@@ -32,16 +39,7 @@ let clear = () => {
         drawRect(0, y, width, yStep, [c,c,c, 255]);
         c += 5;
     }
-}
-let drawFacingLine = () => {
-    let pmx = (player.x+.5)*mapCanvas.width/mapWidth;
-    let pmy = (player.y+.5)*mapCanvas.height/mapHeight;
-    mapContext.beginPath();
-    mapContext.moveTo(pmx,pmy);
-    mapContext.strokeStyle = fillStyle([0,0,255, 255]);
-    mapContext.lineTo(pmx + player.facing.x*10, pmy + player.facing.y*10);
-    mapContext.stroke();
-}
+};
 let clearMap = () => {
     mapContext.fillStyle = fillStyle([0,255,0, 255]);
     mapContext.fillRect(0,0, mapCanvas.width,mapCanvas.height);
@@ -62,18 +60,24 @@ let drawMap = () => {
     }
 
     // ********* draw player
-    mapContext.fillStyle = fillStyle([255,0,255, 255]);
-    mapContext.fillRect((player.x+.5)*wallWidth-2, (player.y+.5)*wallHeight-2, 4,4);
+    mapContext.fillStyle = fillStyle([0,0,255, 255]);
+    mapContext.fillRect((player.x-.25) * wallWidth, (player.y-.25) * wallHeight, wallWidth/2,wallHeight/2);
 
-    // *********** draw player vector
-    drawFacingLine();
+    // ********* draw facing
+    let pmx = (player.x-.25)*mapCanvas.width/mapWidth + .25*wallWidth;
+    let pmy = (player.y-.25)*mapCanvas.height/mapHeight + .25*wallHeight;
+    mapContext.beginPath();
+    mapContext.moveTo(pmx,pmy);
+    mapContext.strokeStyle = fillStyle([0,0,255, 255]);
+    mapContext.lineTo(pmx + player.facing.x*10, pmy + player.facing.y*10);
+    mapContext.stroke();
 }
 
 let map = [
     [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+    [1,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+    [1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+    [1,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
     [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
 ];
 mapCanvas.height = map.length * 10;
@@ -82,8 +86,8 @@ let mapWidth = map[0].length;
 let mapHeight = map.length;
 let player = {
     x: 5,
-    y: 2,
-    facing: new Victor(0,-1),
+    y: 2.5,
+    facing: new Victor(0,1),
     speed: .001,
     turnSpeed: .001,
     shouldLog: false,
@@ -114,7 +118,7 @@ function update(progress) {
     if (pressedKeys['KeyS']) vel.subtract(player.facing);
     if (pressedKeys['KeyD']) player.facing = rotateBy(player.facing, progress * player.turnSpeed);
     if (pressedKeys['KeyA']) player.facing = rotateBy(player.facing,-progress * player.turnSpeed);
-    if (pressedKeys['KeyU']) player.shouldLog = false;
+    player.shouldLog = false;
     if (pressedKeys['KeyI']) player.shouldLog = true;
     // console.log(vel.length());
     if (vel.length() < .001) return;
@@ -159,13 +163,22 @@ let slowLog = (msg) => {
     if (!player.shouldLog) return;
     if (frameCorrelator > .9) console.log(msg);
 }
+let getWallTexture = (x,y) => {
+    const mv = getMapValue(map, x,y);
+    return brick;
+}
+
+let slices = width/4;
+// slices = 2**6;
+// slices = 4;
+// slices = width;
+let sliceWidth = width/slices;
 function draw() {
     slowLog(`********** draw`);
     clear();
 
     // *********** scan for walls
-    const slices = width/10;
-    function* nextRay(){
+    function* rayGen(){
         let target = new Victor(player.x, player.y);
         let f = player.facing.clone();
         f.normalize();
@@ -174,33 +187,43 @@ function draw() {
         target.add(f);
         f = rotateBy(f, -Math.PI);
         f.multiplyScalar(2/slices);
-        for (let x = 0; x < slices; x++){
-            let nextRay = new Victor(target.x-player.x, target.y-player.y);
-            // slowLog(`target ${target} nextRay ${nextRay}`);
-            yield nextRay;
+        for (let x = 0; x <= slices; x++){
+            let next = new Victor(target.x-player.x, target.y-player.y);
+            // slowLog(`target ${target} next ${next}`);
+            yield next;
             target.add(f);
         }
     }
-    nextRay = nextRay();
-    let drawLoc = 0;
-    let drawSliceSize = width/slices;
-    let lastH = 0;
-    let h = 0;
-    for (let x = 0; x < slices; x++) {
-        let wallPoint = findCollisionPoint(map, new Victor(player.x, player.y), nextRay.next().value);
-        // slowLog(`collision point is ${wallPoint}`);
+    rayGen = rayGen();
+    let sliceHeight = 0;
+    let nextRay = rayGen.next().value;
+    let nextWallPoint = findCollisionPoint(map, new Victor(player.x, player.y), nextRay);
+    for (let x = 0; x < width; x += sliceWidth) {
+        const wallPoint = nextWallPoint;
+        nextRay = rayGen.next().value;
+        if (nextRay) nextWallPoint = findCollisionPoint(map, new Victor(player.x, player.y), nextRay);
         let d = getPointDistanceFromCameraPlane(wallPoint, new Victor(player.x,player.y), player.facing);
-        slowLog(`d to plane is ${d}`);
-        lastH = h;
-        h = height/(2*d);
-        h = round(h);
-        h = h - (h % 4);
+
+        // draw black background behind texture
+        sliceHeight = height/(2*d);
+        sliceHeight = round(sliceHeight);
+        sliceHeight = sliceHeight - (sliceHeight % sliceWidth);
+        let color = [0,0,0, 255];
+        let sliceY = height/2 - sliceHeight/2;
+        drawRect(x, sliceY, sliceWidth, sliceHeight, color);
+
+        // draw texture for the square
+        let tex = getWallTexture(wallPoint.x, wallPoint.y);
+        let sx = Math.floor((getTextureX(wallPoint) * tex.width) % tex.width);
+        let sy = 0;
+        let sw = 1;
+        let sh = tex.height;
+        let dx = x;
+        let dy = sliceY;
+        let dw = sliceWidth;
+        let dh = sliceHeight;
         let bright = 1/distance(new Victor(player.x,player.y), wallPoint);
-        let color = [255*bright,0,0, 255];
-        // slowLog(`h became ${h}`);
-        drawRect(drawLoc, height/2 - h/2, drawSliceSize, h, color);
-        drawLoc += drawSliceSize;
-        // slowLog(`h delta is ${Math.abs(lastH - h)}`);
+        blitRect(tex, sx,sy, sw,sh, dx,dy, dw,dh, bright);
     }
 
     drawMap();
@@ -218,5 +241,5 @@ function loop(timestamp) {
     let info = document.getElementById('info');
     info.innerHTML = `${round(progress,2)}<br/>${JSON.stringify(player)}`;
 }
-let lastRender = 0
-window.requestAnimationFrame(loop)
+let lastRender = 0;
+window.requestAnimationFrame(loop);
