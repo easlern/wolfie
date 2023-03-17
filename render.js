@@ -40,15 +40,6 @@ let clear = () => {
         c += 5;
     }
 };
-let drawFacingLine = () => {
-    let pmx = (player.x+.5)*mapCanvas.width/mapWidth;
-    let pmy = (player.y+.5)*mapCanvas.height/mapHeight;
-    mapContext.beginPath();
-    mapContext.moveTo(pmx,pmy);
-    mapContext.strokeStyle = fillStyle([0,0,255, 255]);
-    mapContext.lineTo(pmx + player.facing.x*10, pmy + player.facing.y*10);
-    mapContext.stroke();
-}
 let clearMap = () => {
     mapContext.fillStyle = fillStyle([0,255,0, 255]);
     mapContext.fillRect(0,0, mapCanvas.width,mapCanvas.height);
@@ -69,18 +60,24 @@ let drawMap = () => {
     }
 
     // ********* draw player
-    mapContext.fillStyle = fillStyle([255,0,255, 255]);
-    mapContext.fillRect((player.x+.5)*wallWidth-2, (player.y+.5)*wallHeight-2, 4,4);
+    mapContext.fillStyle = fillStyle([0,0,255, 255]);
+    mapContext.fillRect((player.x-.25) * wallWidth, (player.y-.25) * wallHeight, wallWidth/2,wallHeight/2);
 
-    // *********** draw player vector
-    drawFacingLine();
+    // ********* draw facing
+    let pmx = (player.x-.25)*mapCanvas.width/mapWidth + .25*wallWidth;
+    let pmy = (player.y-.25)*mapCanvas.height/mapHeight + .25*wallHeight;
+    mapContext.beginPath();
+    mapContext.moveTo(pmx,pmy);
+    mapContext.strokeStyle = fillStyle([0,0,255, 255]);
+    mapContext.lineTo(pmx + player.facing.x*10, pmy + player.facing.y*10);
+    mapContext.stroke();
 }
 
 let map = [
     [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+    [1,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+    [1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+    [1,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
     [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
 ];
 mapCanvas.height = map.length * 10;
@@ -89,8 +86,8 @@ let mapWidth = map[0].length;
 let mapHeight = map.length;
 let player = {
     x: 5,
-    y: 2,
-    facing: new Victor(0,-1),
+    y: 2.5,
+    facing: new Victor(0,1),
     speed: .001,
     turnSpeed: .001,
     shouldLog: false,
@@ -171,8 +168,10 @@ let getWallTexture = (x,y) => {
     return brick;
 }
 
-let slices = width/20;
-slices = 2**6;
+let slices = width/4;
+// slices = 2**6;
+// slices = 4;
+// slices = width;
 let sliceWidth = width/slices;
 function draw() {
     slowLog(`********** draw`);
@@ -199,37 +198,32 @@ function draw() {
     let sliceHeight = 0;
     let nextRay = rayGen.next().value;
     let nextWallPoint = findCollisionPoint(map, new Victor(player.x, player.y), nextRay);
-    for (let x = 0; x < slices; x++) {
-        const sliceX = x * sliceWidth;
+    for (let x = 0; x < width; x += sliceWidth) {
         const wallPoint = nextWallPoint;
         nextRay = rayGen.next().value;
         if (nextRay) nextWallPoint = findCollisionPoint(map, new Victor(player.x, player.y), nextRay);
-        // slowLog(`collision point is ${wallPoint}`);
         let d = getPointDistanceFromCameraPlane(wallPoint, new Victor(player.x,player.y), player.facing);
 
         // draw black background behind texture
         sliceHeight = height/(2*d);
         sliceHeight = round(sliceHeight);
-        sliceHeight = sliceHeight - (sliceHeight % 4);
+        sliceHeight = sliceHeight - (sliceHeight % sliceWidth);
         let color = [0,0,0, 255];
         let sliceY = height/2 - sliceHeight/2;
-        drawRect(x*sliceWidth, sliceY, sliceWidth, sliceHeight, color);
+        drawRect(x, sliceY, sliceWidth, sliceHeight, color);
 
+        // draw texture for the square
         let tex = getWallTexture(wallPoint.x, wallPoint.y);
-        // draw textures within this slice
-        let sx = tex.width * (wallPoint.x%1);
-        let sx2 = tex.width * (nextWallPoint.x%1);
+        let sx = Math.floor((getTextureX(wallPoint) * tex.width) % tex.width);
         let sy = 0;
-        let sw = sx2 - sx;
-        if (sw < 0) sw = tex.width - sx;
+        let sw = 1;
         let sh = tex.height;
-        let dx = sliceX;
+        let dx = x;
         let dy = sliceY;
         let dw = sliceWidth;
         let dh = sliceHeight;
         let bright = 1/distance(new Victor(player.x,player.y), wallPoint);
-        slowLog(`wallPoint ${wallPoint} nextWallPoint ${nextWallPoint}`);
-        blitRect(brick, sx,sy, sw,sh, dx,dy, dw,dh, bright);
+        blitRect(tex, sx,sy, sw,sh, dx,dy, dw,dh, bright);
     }
 
     drawMap();

@@ -76,6 +76,28 @@ let getPointDistanceFromCameraPlane = (point, camPoint, camFacing) => {
     b.add(r);
     return distanceFromPointToLine(point, a,b);
 };
+let getCollidedWallNormal = (x,y) => {
+    let eq = (x,y) => {
+        return Math.abs(x - y) < 0.001;
+    }
+    if (eq(Math.round(x), x)){
+        if (obstructed(map, x-.5,y)) return new Victor(1,0);
+        return new Victor(-1,0);
+    }
+    if (eq(Math.round(y), y)){
+        if (obstructed(map, x,y-.5)) return new Victor(0,1);
+        return new Victor(0,-1);
+    }
+    throw (`can't get collided wall normal for ${x} ${y}`);
+}
+let getTextureX = (wcp) => {
+    let normal = getCollidedWallNormal(wcp.x, wcp.y);
+    if (normal.x === 1) return 1 - wcp.y%1;
+    if (normal.x === -1) return wcp.y%1;
+    if (normal.y === 1) return wcp.x%1;
+    if (normal.y === -1) return 1 - wcp.x%1;
+    throw (`can't get texture x for ${wcp}`);
+}
 
 let test_findCollisionPoint_findsFirstEdgeStraightOn = () => {
     let map = [
