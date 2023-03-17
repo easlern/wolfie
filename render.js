@@ -121,7 +121,7 @@ function update(progress) {
     if (pressedKeys['KeyS']) vel.subtract(player.facing);
     if (pressedKeys['KeyD']) player.facing = rotateBy(player.facing, progress * player.turnSpeed);
     if (pressedKeys['KeyA']) player.facing = rotateBy(player.facing,-progress * player.turnSpeed);
-    if (pressedKeys['KeyU']) player.shouldLog = false;
+    player.shouldLog = false;
     if (pressedKeys['KeyI']) player.shouldLog = true;
     // console.log(vel.length());
     if (vel.length() < .001) return;
@@ -166,13 +166,19 @@ let slowLog = (msg) => {
     if (!player.shouldLog) return;
     if (frameCorrelator > .9) console.log(msg);
 }
+let getWallTexture = (x,y) => {
+    const mv = getMapValue(map, x,y);
+    return brick;
+}
+
+let slices = width/20;
+slices = 8;
+let sliceWidth = width/slices;
 function draw() {
     slowLog(`********** draw`);
     clear();
 
     // *********** scan for walls
-    let slices = width/10;
-    slices = 10;
     function* rayGen(){
         let target = new Victor(player.x, player.y);
         let f = player.facing.clone();
@@ -190,12 +196,11 @@ function draw() {
         }
     }
     rayGen = rayGen();
-    let drawLoc = 0;
-    let drawSliceSize = width/slices;
-    let h = 0;
+    let sliceHeight = 0;
     let nextRay = rayGen.next().value;
     let nextWallPoint = findCollisionPoint(map, new Victor(player.x, player.y), nextRay);
     for (let x = 0; x < slices; x++) {
+        const sliceX = x * sliceWidth;
         const wallPoint = nextWallPoint;
         nextRay = rayGen.next().value;
         if (nextRay) nextWallPoint = findCollisionPoint(map, new Victor(player.x, player.y), nextRay);
@@ -203,30 +208,27 @@ function draw() {
         let d = getPointDistanceFromCameraPlane(wallPoint, new Victor(player.x,player.y), player.facing);
 
         // draw black background behind texture
-        h = height/(2*d);
-        h = round(h);
-        h = h - (h % 4);
+        sliceHeight = height/(2*d);
+        sliceHeight = round(sliceHeight);
+        sliceHeight = sliceHeight - (sliceHeight % 4);
         let color = [0,0,0, 255];
-        drawRect(drawLoc, height/2 - h/2, drawSliceSize, h, color);
-        let bright = 1/distance(new Victor(player.x,player.y), wallPoint);
+        let sliceY = height/2 - sliceHeight/2;
+        drawRect(x*sliceWidth, sliceY, sliceWidth, sliceHeight, color);
 
         // draw textures within this slice
-        let subX = drawLoc;
-        while (subX < drawLoc + drawSliceSize) {
-            const wo = wallPoint.x % 1;
-            const sx = brick.width * wo;
-            const sy = 0;
-            let sw = brick.width * (nextWallPoint.x - wallPoint.x);
-            const sh = brick.height;
-            const dx = subX;
-            const dy = height / 2 - h / 2;
-            const txRem = brick.width - sx;
-            if (sw > txRem) sw = txRem;
-            blitRect(brick, sx,sy, sw,sh, dx,dy, drawSliceSize,h, bright);
-            subX += drawSliceSize;
-        }
-
-        drawLoc += drawSliceSize;
+        let sx = brick.width * (wallPoint.x%1);
+        let sx2 = brick.width * (nextWallPoint.x%1);
+        if (sx2 < sx) sx2 += 1;
+        let sy = 0;
+        let sw = Math.min(sliceWidth, sx2-sx);
+        let sh = brick.height;
+        let dx = sliceX;
+        let dy = sliceY;
+        let dw = sliceWidth;
+        let dh = sliceHeight;
+        let bright = 1/distance(new Victor(player.x,player.y), wallPoint);
+        slowLog(`wallPoint ${wallPoint} nextWallPoint ${nextWallPoint}`);
+        blitRect(brick, sx,sy, sw,sh, dx,dy, dw,dh, bright);
     }
 
     drawMap();

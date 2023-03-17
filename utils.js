@@ -7,8 +7,8 @@ let rotateBy = (vector, amount) => {
     let y2 = vector.x * Math.sin(amount) + vector.y * Math.cos(amount);
     return new Victor(x2,y2).normalize();
 };
-function round(x, places=0) {
-    return Math.round(x * 10**places) / 10**places;
+function round(num, places=0) {
+    return Math.round(num * 10**places) / 10**places;
 }
 let getFirstDecimal = (num) => {
     num -= Math.floor(num);
