@@ -77,8 +77,9 @@ let getPointDistanceFromCameraPlane = (point, camPoint, camFacing) => {
     return distanceFromPointToLine(point, a,b);
 };
 let getCollidedWallNormal = (x,y) => {
+    slowLog(`getting normal for ${x} ${y}`);
     let eq = (x,y) => {
-        return Math.abs(x - y) < 0.001;
+        return Math.abs(x - y) < 0.00000001;
     }
     if (eq(Math.round(x), x)){
         if (obstructed(map, x-.5,y)) return new Victor(1,0);

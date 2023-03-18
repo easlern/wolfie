@@ -7,3 +7,7 @@ let waitForLoad = (image) => {
 let brick = new Image(100,100);
 brick.src = "images/brick.png";
 waitForLoad(brick);
+
+let whiteBrick = new Image(100,100);
+whiteBrick.src = "images/brick-white.png";
+waitForLoad(whiteBrick);

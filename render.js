@@ -76,7 +76,7 @@ let drawMap = () => {
 let map = [
     [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
     [1,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-    [1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+    [1,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
     [1,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
     [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
 ];
@@ -164,8 +164,12 @@ let slowLog = (msg) => {
     if (frameCorrelator > .9) console.log(msg);
 }
 let getWallTexture = (x,y) => {
+    let normal = getCollidedWallNormal(x,y);
+    if (normal.x === 1) x -= 0.5;
+    if (normal.y === 1) y -= 0.5;
     const mv = getMapValue(map, x,y);
-    return brick;
+    if (mv === 2) return whiteBrick;
+    if (mv === 1) return brick;
 }
 
 let slices = width/4;
@@ -204,6 +208,12 @@ function draw() {
         if (nextRay) nextWallPoint = findCollisionPoint(map, new Victor(player.x, player.y), nextRay);
         let d = getPointDistanceFromCameraPlane(wallPoint, new Victor(player.x,player.y), player.facing);
 
+        let tex = getWallTexture(wallPoint.x, wallPoint.y);
+        if (!tex){
+            console.log(`no tex for wallPoint ${wallPoint}`);
+            continue;
+        }
+
         // draw black background behind texture
         sliceHeight = height/(2*d);
         sliceHeight = round(sliceHeight);
@@ -213,7 +223,6 @@ function draw() {
         drawRect(x, sliceY, sliceWidth, sliceHeight, color);
 
         // draw texture for the square
-        let tex = getWallTexture(wallPoint.x, wallPoint.y);
         let sx = Math.floor((getTextureX(wallPoint) * tex.width) % tex.width);
         let sy = 0;
         let sw = 1;
