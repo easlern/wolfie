@@ -118,9 +118,7 @@ function update(progress) {
     if (pressedKeys['KeyS']) vel.subtract(player.facing);
     if (pressedKeys['KeyD']) player.facing = rotateBy(player.facing, progress * player.turnSpeed);
     if (pressedKeys['KeyA']) player.facing = rotateBy(player.facing,-progress * player.turnSpeed);
-    player.shouldLog = false;
-    if (pressedKeys['KeyI']) player.shouldLog = true;
-    // console.log(vel.length());
+    player.shouldLog = !!pressedKeys['KeyI'];
     if (vel.length() < .001) return;
 
     // ****** move player
@@ -128,9 +126,11 @@ function update(progress) {
     vel.multiply(new Victor(progress*player.speed, progress*player.speed));
     let newPos = [player.x + vel.x, player.y + vel.y];
     // console.log(`newPos: ${newPos}`);
-    let mx = Math.floor(newPos[0]);
-    let my = Math.floor(newPos[1]);
-    if (getMapValue(map, mx,my) === 0) {
+    if (obstructed(map, newPos[0],newPos[1])) {
+        if (!obstructed(map, newPos[0],player.y)) newPos[1] = player.y;
+        else if (!obstructed(map, player.x,newPos[1])) newPos[0] = player.x;
+    }
+    if (!obstructed(map, newPos[0],newPos[1])) {
         player.x = newPos[0];
         player.y = newPos[1];
     }
