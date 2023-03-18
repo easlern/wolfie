@@ -31,7 +31,6 @@ let blitRect = (image, sx,sy, sw,sh, dx,dy, dw,dh, alpha) => {
 
 let clear = () => {
     const top = [100,100,200, 255];
-    const bottom = [50,50,50, 255];
     drawRect(0, 0, width, height/2, top);
     const yStep = 5;
     let c = 50;
@@ -233,6 +232,11 @@ function draw() {
         let dh = sliceHeight;
         let bright = 1/distance(new Victor(player.x,player.y), wallPoint);
         blitRect(tex, sx,sy, sw,sh, dx,dy, dw,dh, bright);
+    }
+
+    // draw fog
+    for (let x = 0; x < width; x++) {
+
     }
 
     drawMap();
