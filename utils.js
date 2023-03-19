@@ -2,6 +2,31 @@ function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+let NoImageTransition = (image) => {
+    return {
+        images: [image],
+        alphas: [1],
+        done: true,
+        update: (delta) => { }
+    }
+}
+let LinearImageTransition = (fromImage, toImage, time=1000) => {
+    return {
+        images: [fromImage, toImage],
+        time: time,
+        timePassed: 0,
+        alphas: [1, 0],
+        done: false,
+        update: function(delta) {
+            this.timePassed += delta;
+            this.timePassed = Math.min(this.timePassed, this.time);
+            this.done = this.timePassed >= this.time;
+            this.alphas[1] = this.timePassed/this.time;
+            this.alphas[0] = 1 - this.alphas[1];
+            if (this.timePassed >= this.time) this.done = true;
+        },
+    };
+};
 let rotateBy = (vector, amount) => {
     let x2 = vector.x * Math.cos(amount) - vector.y * Math.sin(amount);
     let y2 = vector.x * Math.sin(amount) + vector.y * Math.cos(amount);
