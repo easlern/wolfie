@@ -21,6 +21,9 @@ let drawRect = (x,y, w,h, rgba8bitValues) => {
     context.fillStyle = fillStyle(rgba8bitValues);
     context.fillRect(x,y, w,h);
 };
+let blitWholeRect = (image, dx,dy, dw,dh, alpha) => {
+    return blitRect(image, 0,0, image.width,image.height, dx,dy, dw,dh, alpha);
+}
 let blitRect = (image, sx,sy, sw,sh, dx,dy, dw,dh, alpha) => {
     const oga = context.globalAlpha;
     context.globalAlpha = alpha;
@@ -33,10 +36,10 @@ let clear = () => {
     const top = [100,100,200, 255];
     drawRect(0, 0, width, height/2, top);
     const yStep = 5;
-    let c = 50;
+    let c = 0;
     for (let y = height/2; y < height; y += yStep) {
-        drawRect(0, y, width, yStep, [c,c,c, 255]);
-        c += 5;
+        drawRect(0, y, width, yStep, [c,c*.9,c*.5, 255]);
+        c += 1;
     }
 };
 let clearMap = () => {
@@ -84,14 +87,14 @@ mapCanvas.width = map[0].length * 10;
 let mapWidth = map[0].length;
 let mapHeight = map.length;
 let player = {
-    x: 5,
-    y: 2.5,
-    facing: new Victor(0,1),
+    x: 4.3,
+    y: 2.4,
+    facing: new Victor(.97,.26),
     speed: .001,
     turnSpeed: .001,
     shouldLog: false,
     fov: Math.PI/2,
-}
+};
 
 let pressedKeys = {};
 window.onkeyup = function(e) {
@@ -107,22 +110,30 @@ let distance = (a, b) => {
     return Math.sqrt((b.x - a.x)**2 + (b.y - a.y)**2);
 }
 
+let music = null;
 let frameCorrelator = Math.random();
-function update(progress) {
+raven = Raven(7,2);
+function update(delta) {
     frameCorrelator = Math.random();
+
+    raven.update(delta);
 
     // ******* get keyboard input
     let vel = new Victor();
     if (pressedKeys['KeyW']) vel.add(player.facing);
     if (pressedKeys['KeyS']) vel.subtract(player.facing);
-    if (pressedKeys['KeyD']) player.facing = rotateBy(player.facing, progress * player.turnSpeed);
-    if (pressedKeys['KeyA']) player.facing = rotateBy(player.facing,-progress * player.turnSpeed);
+    if (pressedKeys['KeyD']) player.facing = rotateBy(player.facing, delta * player.turnSpeed);
+    if (pressedKeys['KeyA']) player.facing = rotateBy(player.facing,-delta * player.turnSpeed);
     player.shouldLog = !!pressedKeys['KeyI'];
     if (vel.length() < .001) return;
+    if (!music) {
+        music = new Audio('music/mystery-music.ogg');
+        music.play();
+    }
 
     // ****** move player
     vel.normalize();
-    vel.multiply(new Victor(progress*player.speed, progress*player.speed));
+    vel.multiply(new Victor(delta*player.speed, delta*player.speed));
     let newPos = [player.x + vel.x, player.y + vel.y];
     // console.log(`newPos: ${newPos}`);
     if (obstructed(map, newPos[0],newPos[1])) {
@@ -237,6 +248,11 @@ function draw() {
     // draw fog
     for (let x = 0; x < width; x++) {
 
+    }
+
+    // draw characters
+    for (let x = 0; x < raven.images.length; x++) {
+        blitWholeRect(raven.images[x], width/2,height/2, 100,100, raven.alphas[x]);
     }
 
     drawMap();
