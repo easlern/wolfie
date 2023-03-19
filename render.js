@@ -252,7 +252,8 @@ function draw() {
 
     // draw characters
     for (let x = 0; x < raven.images.length; x++) {
-        blitWholeRect(raven.images[x], width/2,height/2, 100,100, raven.alphas[x]);
+        let i = raven.images[x];
+        blitWholeRect(raven.images[x], width/2,height/2, i.width,i.height, raven.alphas[x]);
     }
 
     drawMap();

@@ -19,12 +19,12 @@ let Raven = (x,y) => {
             if (this.transition.done) {
                 // console.log(`done`);
                 if (this.state === 0 && Math.random() > .999) {
-                    console.log(`looking`);
+                    // console.log(`looking`);
                     this.transition = LinearImageTransition(ravenStanding, ravenLooking);
                     this.state = state.looking;
                 }
                 else if (this.state === 1 && Math.random() > .99) {
-                    console.log(`standing`);
+                    // console.log(`standing`);
                     this.transition = LinearImageTransition(ravenLooking, ravenStanding);
                     this.state = state.standing;
                 }
