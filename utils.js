@@ -308,3 +308,13 @@ for(let t of tests) {
     t();
 }
 testVerbose = (msg) => { }
+
+
+
+let a = new Victor(0,-1);
+let b = new Victor(0,-1);
+for (let x = 0; x < 8; x++) {
+    console.log(`${a} dot ${b} = ${a.dot(b)}`);
+    // console.log(`${a} cross ${b} = ${a.cross(b)}`);
+    b = rotateBy(b, Math.PI/4);
+}

@@ -127,7 +127,7 @@ function update(delta) {
     player.shouldLog = !!pressedKeys['KeyI'];
     if (vel.length() < .001) return;
     if (!music) {
-        music = new Audio('music/mystery-music.ogg');
+        music = new Audio('music/curious.ogg');
         music.play();
     }
 
@@ -191,6 +191,9 @@ function draw() {
     slowLog(`********** draw`);
     clear();
 
+    let characters = [];
+    characters.push(raven);
+
     // *********** scan for walls
     function* rayGen(){
         let target = new Victor(player.x, player.y);
@@ -212,6 +215,7 @@ function draw() {
     let sliceHeight = 0;
     let nextRay = rayGen.next().value;
     let nextWallPoint = findCollisionPoint(map, new Victor(player.x, player.y), nextRay);
+    let thingsToDraw = [];
     for (let x = 0; x < width; x += sliceWidth) {
         const wallPoint = nextWallPoint;
         nextRay = rayGen.next().value;
@@ -224,15 +228,13 @@ function draw() {
             continue;
         }
 
-        // draw black background behind texture
+        // describe black background behind texture
         sliceHeight = height/(2*d);
         sliceHeight = round(sliceHeight);
         sliceHeight = sliceHeight - (sliceHeight % sliceWidth);
-        let color = [0,0,0, 255];
         let sliceY = height/2 - sliceHeight/2;
-        drawRect(x, sliceY, sliceWidth, sliceHeight, color);
 
-        // draw texture for the square
+        // describe texture for the square
         let sx = Math.floor((getTextureX(wallPoint) * tex.width) % tex.width);
         let sy = 0;
         let sw = 1;
@@ -242,18 +244,52 @@ function draw() {
         let dw = sliceWidth;
         let dh = sliceHeight;
         let bright = 1/distance(new Victor(player.x,player.y), wallPoint);
-        blitRect(tex, sx,sy, sw,sh, dx,dy, dw,dh, bright);
+
+        thingsToDraw.push({
+            type: 'wall',
+            image: tex,
+            sx: sx,
+            sy: sy,
+            sw: sw,
+            sh: sh,
+            dx: dx,
+            dy: dy,
+            dw: dw,
+            dh: dh,
+            alpha: bright,
+        });
+    }
+
+    for (let c of characters) {
+        for (let x = 0; x < c.images.length; x++) {
+            let i = c.images[x];
+            let a = c.alphas[x];
+            thingsToDraw.push({
+                type: 'character',
+                image: i,
+                dx: width/2,
+                dy: height/2,
+                dw: i.width,
+                dh: i.height,
+                alpha: a,
+            });
+        }
+    }
+
+    for (let x = 0; x < thingsToDraw.length; x++) {
+        let t = thingsToDraw[x];
+        if (t.type === `wall`) {
+            drawRect(t.dx, t.dy, t.dw, t.dh, [0, 0, 0, 255]);
+            blitRect(t.image, t.sx, t.sy, t.sw, t.sh, t.dx, t.dy, t.dw, t.dh, t.alpha);
+        }
+        if (t.type === `character`) {
+            blitWholeRect(t.image, t.dx,t.dy, t.dw,t.dh, t.alpha);
+        }
     }
 
     // draw fog
     for (let x = 0; x < width; x++) {
 
-    }
-
-    // draw characters
-    for (let x = 0; x < raven.images.length; x++) {
-        let i = raven.images[x];
-        blitWholeRect(raven.images[x], width/2,height/2, i.width,i.height, raven.alphas[x]);
     }
 
     drawMap();
