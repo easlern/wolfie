@@ -27,7 +27,7 @@ let blitWholeRect = (image, dx,dy, dw,dh, alpha) => {
 let blitRect = (image, sx,sy, sw,sh, dx,dy, dw,dh, alpha) => {
     const oga = context.globalAlpha;
     context.globalAlpha = alpha;
-    slowLog(`blitting sx ${sx} sy ${sy} sw ${sw} sh ${sh} dx ${dx} dy ${dy} dw ${dw} dh ${dh} alpha ${alpha}`);
+    // slowLog(`blitting sx ${sx} sy ${sy} sw ${sw} sh ${sh} dx ${dx} dy ${dy} dw ${dw} dh ${dh} alpha ${alpha}`);
     context.drawImage(image, sx,sy, sw,sh, dx,dy, dw,dh);
     context.globalAlpha = oga;
 };
@@ -113,6 +113,8 @@ let distance = (a, b) => {
 let music = null;
 let frameCorrelator = Math.random();
 raven = Raven(7,2);
+let characters = [];
+characters.push(raven);
 function update(delta) {
     frameCorrelator = Math.random();
 
@@ -191,10 +193,10 @@ function draw() {
     slowLog(`********** draw`);
     clear();
 
-    let characters = [];
-    characters.push(raven);
-
     // *********** scan for walls
+    let dist = (thing) => {
+        return (player.x - thing.x)**2 + (player.y - thing.y)**2;
+    }
     function* rayGen(){
         let target = new Victor(player.x, player.y);
         let f = player.facing.clone();
@@ -206,17 +208,20 @@ function draw() {
         f.multiplyScalar(2/slices);
         for (let x = 0; x <= slices; x++){
             let next = new Victor(target.x-player.x, target.y-player.y);
+            next.normalize();
             // slowLog(`target ${target} next ${next}`);
             yield next;
             target.add(f);
         }
     }
+
     rayGen = rayGen();
     let sliceHeight = 0;
     let nextRay = rayGen.next().value;
     let nextWallPoint = findCollisionPoint(map, new Victor(player.x, player.y), nextRay);
     let thingsToDraw = [];
     for (let x = 0; x < width; x += sliceWidth) {
+        let ray = nextRay;
         const wallPoint = nextWallPoint;
         nextRay = rayGen.next().value;
         if (nextRay) nextWallPoint = findCollisionPoint(map, new Victor(player.x, player.y), nextRay);
@@ -247,6 +252,8 @@ function draw() {
 
         thingsToDraw.push({
             type: 'wall',
+            x: wallPoint.x,
+            y: wallPoint.y,
             image: tex,
             sx: sx,
             sy: sy,
@@ -261,25 +268,41 @@ function draw() {
     }
 
     for (let c of characters) {
-        for (let x = 0; x < c.images.length; x++) {
-            let i = c.images[x];
-            let a = c.alphas[x];
+        let dot = player.facing.dot(new Victor(c.x - player.x, c.y - player.y));
+        slowLog(`dot to char ${dot}`);
+        if (dot < 0) continue;
+        let d = dist(c);
+
+        let dh = height/(2*d);
+        let dy = height/2;
+
+        for (let k = 0; k < c.images.length; k++) {
+            let i = c.images[k];
+            let a = c.alphas[k];
+            let dw = i.width * (dh/i.height);
             thingsToDraw.push({
                 type: 'character',
+                x: c.x,
+                y: c.y,
                 image: i,
-                dx: width/2,
-                dy: height/2,
-                dw: i.width,
-                dh: i.height,
+                dx: width/2 - dw/2,
+                dy: dy,
+                dw: dw,
+                dh: dh,
                 alpha: a,
             });
         }
     }
 
+    thingsToDraw.sort((a,b) => {
+        if (dist(a) === dist(b)) return 0;
+        if (dist(a) > dist(b)) return -1;
+        return 1;
+    });
     for (let x = 0; x < thingsToDraw.length; x++) {
         let t = thingsToDraw[x];
         if (t.type === `wall`) {
-            drawRect(t.dx, t.dy, t.dw, t.dh, [0, 0, 0, 255]);
+            drawRect(t.dx,t.dy, t.dw,t.dh, [0, 0, 0, 255]);
             blitRect(t.image, t.sx, t.sy, t.sw, t.sh, t.dx, t.dy, t.dw, t.dh, t.alpha);
         }
         if (t.type === `character`) {

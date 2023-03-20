@@ -102,7 +102,7 @@ let getPointDistanceFromCameraPlane = (point, camPoint, camFacing) => {
     return distanceFromPointToLine(point, a,b);
 };
 let getCollidedWallNormal = (x,y) => {
-    slowLog(`getting normal for ${x} ${y}`);
+    // slowLog(`getting normal for ${x} ${y}`);
     let eq = (x,y) => {
         return Math.abs(x - y) < 0.00000001;
     }
@@ -314,7 +314,7 @@ testVerbose = (msg) => { }
 let a = new Victor(0,-1);
 let b = new Victor(0,-1);
 for (let x = 0; x < 8; x++) {
-    console.log(`${a} dot ${b} = ${a.dot(b)}`);
+    // console.log(`${a} dot ${b} = ${a.dot(b)}`);
     // console.log(`${a} cross ${b} = ${a.cross(b)}`);
     b = rotateBy(b, Math.PI/4);
 }
