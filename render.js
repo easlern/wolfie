@@ -184,7 +184,11 @@ let getWallTexture = (x,y) => {
     if (mv === 1) return brick;
 }
 
-let slices = width/4;
+let getXAssignment = (ray) => {
+    return
+};
+
+let slices = 160; // 160 "slices" (pixels) horizontal (4 pixels wide on 640 wide display)
 // slices = 2**6;
 // slices = 4;
 // slices = width;
@@ -215,6 +219,7 @@ function draw() {
         }
     }
 
+    // draw walls
     rayGen = rayGen();
     let sliceHeight = 0;
     let nextRay = rayGen.next().value;
@@ -267,6 +272,7 @@ function draw() {
         });
     }
 
+    // draw characters
     for (let c of characters) {
         let dot = player.facing.dot(new Victor(c.x - player.x, c.y - player.y));
         slowLog(`dot to char ${dot}`);
