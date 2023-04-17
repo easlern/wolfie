@@ -112,7 +112,7 @@ let distance = (a, b) => {
 
 let music = null;
 let frameCorrelator = Math.random();
-raven = Raven(7,2);
+raven = Raven(7.5,2.5);
 let characters = [];
 characters.push(raven);
 function update(delta) {
@@ -183,10 +183,6 @@ let getWallTexture = (x,y) => {
     if (mv === 2) return whiteBrick;
     if (mv === 1) return brick;
 }
-
-let getXAssignment = (ray) => {
-    return
-};
 
 let slices = 160; // 160 "slices" (pixels) horizontal (4 pixels wide on 640 wide display)
 // slices = 2**6;
@@ -279,8 +275,11 @@ function draw() {
         if (dot < 0) continue;
         let d = dist(c);
 
-        let dh = height/(2*d);
+        let dh = height/d;
         let dy = height/2;
+        let pv = new Victor(player.x, player.y);
+        let dx = getPixelForLocation(pv, player.facing, new Victor(c.x, c.y));
+        if (dx === null) continue;
 
         for (let k = 0; k < c.images.length; k++) {
             let i = c.images[k];
@@ -291,7 +290,7 @@ function draw() {
                 x: c.x,
                 y: c.y,
                 image: i,
-                dx: width/2 - dw/2,
+                dx: dx - dw/2,
                 dy: dy,
                 dw: dw,
                 dh: dh,

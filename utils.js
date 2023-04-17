@@ -141,14 +141,22 @@ function* pixelRaysGen(w){
         target.add(f);
     }
 }
-let dotsByPixel = [];
+let dotsByPixelHorizontal = [];
+let dotsByPixelVertical = [];
 pixelRaysGen = pixelRaysGen(640);
 let nextRay = pixelRaysGen.next().value;
 while (nextRay != null) {
-    dotsByPixel.push(nextRay.dot(new Victor(0,-1)));
+    dotsByPixelHorizontal.push(nextRay.dot(new Victor(0,-1)));
     nextRay = pixelRaysGen.next().value;
 }
-console.log(dotsByPixel);
+console.log(dotsByPixelHorizontal);
+pixelRaysGen = pixelRaysGen(320);
+nextRay = pixelRaysGen.next().value;
+while (nextRay != null) {
+    dotsByPixelVertical.push(nextRay.dot(new Victor(0,-1)));
+    nextRay = pixelRaysGen.next().value;
+}
+console.log(dotsByPixelHorizontal);
 let binSearch = (value, array, windowLeft=null, windowRight=null) => {
     // console.log(`windowLeft ${windowLeft} windowRight ${windowRight}`);
     if (windowLeft === null) windowLeft = 0;
@@ -166,8 +174,12 @@ let getPixelForLocation = (playerLocationVector, playerFacingVector, objectLocat
     // console.log(`ray ${ray}`);
     let dot = ray.dot(playerFacingVector);
     let cross = ray.cross(playerFacingVector);
-    if (dot < dotsByPixel[0]) return null;
-    return binSearch(dot, dotsByPixel);
+    if (dot < dotsByPixelHorizontal[0]) return null;
+    // console.log(`dot ${dot} dotsByPixel[-1] ${dotsByPixel[-1]}`);
+    if (dotsByPixelHorizontal[dotsByPixelHorizontal.length-1] <= dot && dot <= 1) return dotsByPixelHorizontal.length-1;
+    let slot = binSearch(dot, dotsByPixelHorizontal);
+    if (cross < 0) slot = 639-slot;
+    return slot;
 };
 
 let test_getPixelForLocation_returnsNullForDotsOutsideRange = () => {
@@ -182,6 +194,30 @@ let test_getPixelForLocation_returnsLeftmostPixelForThingsAtLeftEdge = () => {
     let ol = new Victor(-1,-1);
     return test_compare('30', 0, getPixelForLocation(pl, pf, ol));
 };
+let test_getPixelForLocation_returnsMiddlePixelForThingsDirectlyAhead = () => {
+    let pl = new Victor(0,0);
+    let pf = new Victor(0,-1);
+    let ol = new Victor(0,-1);
+    return test_compare('35', 319, getPixelForLocation(pl, pf, ol))
+};
+let test_getPixelForLocation_returnsRightMostPixelForThingsAheadAndRight = () => {
+    let pl = new Victor(0,0);
+    let pf = new Victor(0,-1);
+    let ol = new Victor(1,-1);
+    return test_compare('40', 639, getPixelForLocation(pl, pf, ol))
+}
+let test_getPixelForLocation_returnsNullForThingsBehind = () => {
+    let pl = new Victor(0,0);
+    let pf = new Victor(0,-1);
+    let ol = new Victor(0,1);
+    return test_compare('42', null, getPixelForLocation(pl, pf, ol))
+}
+let test_getPixelForLocation_returnsNullForThingsTooFarRight = () => {
+    let pl = new Victor(0,0);
+    let pf = new Victor(0,-1);
+    let ol = new Victor(2,-1);
+    return test_compare('45', null, getPixelForLocation(pl, pf, ol))
+}
 let test_binSearch_findsValue_inArraySizeOne = () => {
     let a = [0];
     test_compare('50', 0, binSearch(0, a));
@@ -361,6 +397,10 @@ let test_compare = (name, expect, get) => {
 tests = [
     test_getPixelForLocation_returnsNullForDotsOutsideRange,
     test_getPixelForLocation_returnsLeftmostPixelForThingsAtLeftEdge,
+    test_getPixelForLocation_returnsMiddlePixelForThingsDirectlyAhead,
+    test_getPixelForLocation_returnsRightMostPixelForThingsAheadAndRight,
+    test_getPixelForLocation_returnsNullForThingsBehind,
+    test_getPixelForLocation_returnsNullForThingsTooFarRight,
     test_binSearch_findsValue_inArraySizeOne,
     test_binSearch_findsValue_inArraySizeTwo,
     test_binSearch_findsValue_inLongEvenArray,
