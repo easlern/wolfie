@@ -102,7 +102,7 @@ let getPointDistanceFromCameraPlane = (point, camPoint, camFacing) => {
     return distanceFromPointToLine(point, a,b);
 };
 let getCollidedWallNormal = (x,y) => {
-    slowLog(`getting normal for ${x} ${y}`);
+    // slowLog(`getting normal for ${x} ${y}`);
     let eq = (x,y) => {
         return Math.abs(x - y) < 0.00000001;
     }
@@ -124,7 +124,116 @@ let getTextureX = (wcp) => {
     if (normal.y === -1) return 1 - wcp.x%1;
     throw (`can't get texture x for ${wcp}`);
 }
+function* pixelRaysGen(w){
+    let target = new Victor(0,0);
+    let f = new Victor(0,-1);
+    f.normalize();
+    target.add(f);
+    f = rotateBy(f, -Math.PI/2);
+    target.add(f);
+    f = rotateBy(f, -Math.PI);
+    f.multiplyScalar(1/(w/2));
+    while (target.x <= 0){
+        let next = new Victor(target.x, target.y);
+        next.normalize();
+        // slowLog(`target ${target} next ${next}`);
+        yield next;
+        target.add(f);
+    }
+}
+let dotsByPixelHorizontal = [];
+let dotsByPixelVertical = [];
+pixelRaysGen = pixelRaysGen(640);
+let nextRay = pixelRaysGen.next().value;
+while (nextRay != null) {
+    dotsByPixelHorizontal.push(nextRay.dot(new Victor(0,-1)));
+    nextRay = pixelRaysGen.next().value;
+}
+console.log(dotsByPixelHorizontal);
+pixelRaysGen = pixelRaysGen(320);
+nextRay = pixelRaysGen.next().value;
+while (nextRay != null) {
+    dotsByPixelVertical.push(nextRay.dot(new Victor(0,-1)));
+    nextRay = pixelRaysGen.next().value;
+}
+console.log(dotsByPixelHorizontal);
+let binSearch = (value, array, windowLeft=null, windowRight=null) => {
+    // console.log(`windowLeft ${windowLeft} windowRight ${windowRight}`);
+    if (windowLeft === null) windowLeft = 0;
+    if (windowRight === null) windowRight = array.length-1;
+    if (windowRight - windowLeft <= 2) return windowLeft;
+    if (value < array[windowLeft] || value > array[windowRight]) throw `Can't search for ${value} in array from ${array[windowLeft]} to ${array[windowRight]}`;
+    if (windowLeft === windowRight) return windowLeft;
+    let mid = Math.floor((windowLeft + windowRight) / 2);
+    if (value < array[mid]) return binSearch(value, array, windowLeft, mid);
+    return binSearch(value, array, mid, windowRight);
+};
+let getPixelForLocation = (playerLocationVector, playerFacingVector, objectLocationVector) => {
+    let ray = new Victor(objectLocationVector.x - playerLocationVector.x, objectLocationVector.y - playerLocationVector.y);
+    ray.normalize();
+    // console.log(`ray ${ray}`);
+    let dot = ray.dot(playerFacingVector);
+    let cross = ray.cross(playerFacingVector);
+    if (dot < dotsByPixelHorizontal[0]) return null;
+    // console.log(`dot ${dot} dotsByPixel[-1] ${dotsByPixel[-1]}`);
+    if (dotsByPixelHorizontal[dotsByPixelHorizontal.length-1] <= dot && dot <= 1) return dotsByPixelHorizontal.length-1;
+    let slot = binSearch(dot, dotsByPixelHorizontal);
+    if (cross < 0) slot = 639-slot;
+    return slot;
+};
 
+let test_getPixelForLocation_returnsNullForDotsOutsideRange = () => {
+    let pl = new Victor(0,0);
+    let pf = new Victor(0,-1);
+    let ol = new Victor(-1,0);
+    return test_compare('25', null, getPixelForLocation(pl, pf, ol));
+};
+let test_getPixelForLocation_returnsLeftmostPixelForThingsAtLeftEdge = () => {
+    let pl = new Victor(0,0);
+    let pf = new Victor(0,-1);
+    let ol = new Victor(-1,-1);
+    return test_compare('30', 0, getPixelForLocation(pl, pf, ol));
+};
+let test_getPixelForLocation_returnsMiddlePixelForThingsDirectlyAhead = () => {
+    let pl = new Victor(0,0);
+    let pf = new Victor(0,-1);
+    let ol = new Victor(0,-1);
+    return test_compare('35', 319, getPixelForLocation(pl, pf, ol))
+};
+let test_getPixelForLocation_returnsRightMostPixelForThingsAheadAndRight = () => {
+    let pl = new Victor(0,0);
+    let pf = new Victor(0,-1);
+    let ol = new Victor(1,-1);
+    return test_compare('40', 639, getPixelForLocation(pl, pf, ol))
+}
+let test_getPixelForLocation_returnsNullForThingsBehind = () => {
+    let pl = new Victor(0,0);
+    let pf = new Victor(0,-1);
+    let ol = new Victor(0,1);
+    return test_compare('42', null, getPixelForLocation(pl, pf, ol))
+}
+let test_getPixelForLocation_returnsNullForThingsTooFarRight = () => {
+    let pl = new Victor(0,0);
+    let pf = new Victor(0,-1);
+    let ol = new Victor(2,-1);
+    return test_compare('45', null, getPixelForLocation(pl, pf, ol))
+}
+let test_binSearch_findsValue_inArraySizeOne = () => {
+    let a = [0];
+    test_compare('50', 0, binSearch(0, a));
+}
+let test_binSearch_findsValue_inArraySizeTwo = () => {
+    let a = [10,20];
+    test_compare('60', 0, binSearch(12, a));
+}
+let test_binSearch_findsValue_inLongEvenArray = () => {
+    let a = [1,2,3,4,5,6];
+    test_compare('70', 2, binSearch(3.5, a));
+}
+let test_binSearch_findsValue_inLongOddArray = () => {
+    let a = [1,2,3,4,5,6,7];
+    test_compare('80', 3, binSearch(4.5, a));
+}
 let test_findCollisionPoint_findsFirstEdgeStraightOn = () => {
     let map = [
         [0,1],
@@ -215,7 +324,7 @@ let test_distanceFromPointToLine_pointUpperRightOfDecline_offsetLine = () => {
     let p = new Victor(10,-10);
     let l1 = new Victor(1,0);
     let l2 = new Victor(2,1);
-    test_compare('1175', Math.sqrt(9**2+9**2), distanceFromPointToLine(p, l1,l2));
+    test_compare('1175', 13.435028842544401, distanceFromPointToLine(p, l1,l2));
 }
 let test_getPointDistanceFromCameraPlane_pointRightOfVerticalPlane = () => {
     let p = new Victor(10,0);
@@ -263,12 +372,15 @@ let test_compare = (name, expect, get) => {
     let pass = () => {
         console.log(`Passed test ${name}`);
     }
-    if (typeof(expect) === typeof(new Victor()) && typeof(get) === typeof(new Victor())) {
+    if (expect === null || get === null) {
+        if (expect === get) return pass();
+    }
+    else if (typeof(expect) === typeof(new Victor()) && typeof(get) === typeof(new Victor())) {
         if (expect.x - get.x < fudge && expect.y - get.y < fudge){
             return pass();
         }
     }
-    if (expect.toString() === get.toString()){
+    else if (expect.toString() === get.toString()){
         return pass();
     }
     else if (Number.isFinite(expect) && Number.isFinite(get)) {
@@ -276,14 +388,23 @@ let test_compare = (name, expect, get) => {
             return pass();
         }
     }
-    else {
-        console.log(`Failed test ${name}`);
-        console.log(`Expected ${expect}`);
-        console.log(`Got ${get}`);
-    }
+
+    console.log(`Failed test ${name}`);
+    console.log(`Expected ${expect}`);
+    console.log(`Got ${get}`);
 };
 
 tests = [
+    test_getPixelForLocation_returnsNullForDotsOutsideRange,
+    test_getPixelForLocation_returnsLeftmostPixelForThingsAtLeftEdge,
+    test_getPixelForLocation_returnsMiddlePixelForThingsDirectlyAhead,
+    test_getPixelForLocation_returnsRightMostPixelForThingsAheadAndRight,
+    test_getPixelForLocation_returnsNullForThingsBehind,
+    test_getPixelForLocation_returnsNullForThingsTooFarRight,
+    test_binSearch_findsValue_inArraySizeOne,
+    test_binSearch_findsValue_inArraySizeTwo,
+    test_binSearch_findsValue_inLongEvenArray,
+    test_binSearch_findsValue_inLongOddArray,
     test_findCollisionPoint_findsFirstEdgeStraightOn,
     test_findCollisionPoint_findsFirstEdgeStraightOnLeft,
     test_findCollisionPoint_findsDistantEdgeStraightOn,
@@ -308,3 +429,13 @@ for(let t of tests) {
     t();
 }
 testVerbose = (msg) => { }
+
+
+
+let a = new Victor(0,-1);
+let b = new Victor(0,-1);
+for (let x = 0; x < 8; x++) {
+    // console.log(`${a} dot ${b} = ${a.dot(b)}`);
+    // console.log(`${a} cross ${b} = ${a.cross(b)}`);
+    b = rotateBy(b, Math.PI/4);
+}
